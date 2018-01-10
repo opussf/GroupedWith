@@ -1,0 +1,9 @@
+## Interface: @INTERFACE@
+## Title: GroupedWith
+## Notes: Show characters you have grouped with before.
+## Author: sistersally of hyjal
+## Version: @VERSION@
+## Description: Shows characters you have grouped with before.
+## SavedVariables: GroupedWith_data
+GroupedWith.lua
+GroupedWith.xml
