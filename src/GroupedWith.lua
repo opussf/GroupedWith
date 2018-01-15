@@ -19,8 +19,8 @@ GroupedWith = {}
 
 -- loaded
 function GroupedWith.OnLoad()
-	GroupedWithFrame:RegisterEvent("ADDON_LOADED")
-	GroupedWithFrame:RegisterEvent("PARTY_MEMBERS_CHANGED")
+	GroupedWithFrame:RegisterEvent( "ADDON_LOADED" )
+	GroupedWithFrame:RegisterEvent( "GROUP_ROSTER_UPDATE" )
 
 	--register slash commands
 	SLASH_GROUPEDWITH1 = "/groupedwith";
@@ -34,9 +34,115 @@ end
 
 -- events
 function GroupedWith.ADDON_LOADED()
+	GroupedWithFrame:UnregisterEvent( "ADDON_LOADED" )
+	GroupedWith.Print( "Addon Loaded" )
+	GroupedWith.realm = GetRealmName()
+	GroupedWith.name = GetUnitName("player")
+	GroupedWith.fullName = GroupedWith.name.."-"..GroupedWith.realm
 end
 
-function GroupedWith.PARTY_MEMBERS_CHANGED()
-	print( "PARTY_MEMBERS_CHANGED" )
+function GroupedWith.GROUP_ROSTER_UPDATE()
+	GroupedWith.Print( "GROUP_ROSTER_UPDATE" )
+
+	local memberCount = GetNumGroupMembers()
+	GroupedWith.Print( ( memberCount or "nil" ) .. " members in the group." )
+
+
+	local inInstanceGroup = IsInGroup(LE_PARTY_CATEGORY_INSTANCE)
+	if inInstanceGroup then
+  		print("Player is in an instance group!")
+	elseif IsInGroup() then
+  		print("Player is in a normal group!")
+	end
+
+	local pre="party"
+
+	if memberCount > 1 then -- not just alone.
+		for index = 1, memberCount-1 do
+			unitID = string.format( "%s%s", pre, index )
+			print( unitID )
+			print( index..": "..GetUnitName( unitID , true ) )
+			GroupedWith.UpdateData( GetUnitName( unitID, true ) )
+		end
+	end
+end
+
+function GroupedWith.UpdateData( unitName )
+	if GroupedWith_data[unitName] then
+		GroupedWith_data[unitName].lastSeen = time()
+	else
+		GroupedWith_data[unitName] = {
+			["lastSeen"] = time(),
+			["firstSeen"] = time(),
+			["seenBy"] = {
+				[GroupedWith.fullName] = {
+					["firstSeen"] = time()
+				}
+			}
+		}
+	end
+	if GroupedWith_data[unitName].seenBy[GroupedWith.fullName] then
+		GroupedWith_data[unitName].seenBy[GroupedWith.fullName].lastSeen = time()
+	end
+end
+--[[
+	local homePartyInfo = GetHomePartyInfo()
+	if homePartyInfo then
+		print( "in home party" )
+		for index = 1, 4 do
+			if homePartyInfo[index] then
+				memberName = homePartyInfo[index]
+				if GroupedWith_data[memberName] then
+					GroupedWith_data[memberName].lastSeen = time()
+
+				else
+					GroupedWith_data[memberName] = {
+						["lastSeen"] = time(),
+						["firstSeen"] = time(),
+						["seenBy"] = {
+							[GroupedWith.name.."-"..GroupedWith.realm] = {
+								["lastSeen"] = time(),
+								["firstSeen"] = time()
+							}
+						}
+					}
+				end
+			end
+		end
+	else
+		print( "nope" )
+	end
+]]
+--[[
+
+	local x1 = GetHomePartyInfo()
+	if x1 then print("in home party")
+		print(x1[1], x1[2], x1[3], x1[4])
+		-- x1[1] == name-realm
+	else print("nope")
+	end
+
+
+	local memberCount = 0
+	for groupindex = 1,GetNumGroupMembers() do
+		if (GetPartyMember(groupindex)) then
+			memberCount = memberCount + 1
+		end
+	end
+	GroupedWith.Print( "your party has "..memberCount.." members." )
+]]
+
+-- end events
+function GroupedWith.command( msg )
+	GroupedWith.GROUP_ROSTER_UPDATE()
+end
+
+function GroupedWith.Print( msg, showName )
+	-- print to the chat frame
+	-- set showName to false to suppress the addon name printing
+	if (showName == nil) or (showName) then
+		msg = COLOR_GOLD..GROUPEDWITH_MSG_ADDONNAME..COLOR_END.."> "..msg
+	end
+	DEFAULT_CHAT_FRAME:AddMessage( msg )
 end
 
