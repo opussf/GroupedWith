@@ -29,7 +29,7 @@ function GroupedWith.OnLoad()
 
 	-- Chat system hook
 --	ChatFrame_AddMessageEventFilter("CHAT_MSG_SYSTEM", Hitlist.CHAT_MSG_SYSTEM)
---	GameTooltip:HookScript( "OnTooltipSetUnit", Hitlist.HookSetUnit )
+	GameTooltip:HookScript( "OnTooltipSetUnit", GroupedWith.HookSetUnit )
 end
 
 -- events
@@ -47,7 +47,6 @@ function GroupedWith.GROUP_ROSTER_UPDATE()
 	local memberCount = GetNumGroupMembers()
 	GroupedWith.Print( ( memberCount or "nil" ) .. " members in the group." )
 
-
 	local inInstanceGroup = IsInGroup(LE_PARTY_CATEGORY_INSTANCE)
 	if inInstanceGroup then
   		print("Player is in an instance group!")
@@ -60,9 +59,12 @@ function GroupedWith.GROUP_ROSTER_UPDATE()
 	if memberCount > 1 then -- not just alone.
 		for index = 1, memberCount-1 do
 			unitID = string.format( "%s%s", pre, index )
+			unitName = GetUnitName( unitID, true )
 			print( unitID )
 			print( index..": "..GetUnitName( unitID , true ) )
-			GroupedWith.UpdateData( GetUnitName( unitID, true ) )
+			if( unitName ~= "Unknown" ) then
+				GroupedWith.UpdateData( GetUnitName( unitID, true ) )
+			end
 		end
 	end
 end
@@ -85,54 +87,43 @@ function GroupedWith.UpdateData( unitName )
 		GroupedWith_data[unitName].seenBy[GroupedWith.fullName].lastSeen = time()
 	end
 end
---[[
-	local homePartyInfo = GetHomePartyInfo()
-	if homePartyInfo then
-		print( "in home party" )
-		for index = 1, 4 do
-			if homePartyInfo[index] then
-				memberName = homePartyInfo[index]
-				if GroupedWith_data[memberName] then
-					GroupedWith_data[memberName].lastSeen = time()
-
-				else
-					GroupedWith_data[memberName] = {
-						["lastSeen"] = time(),
-						["firstSeen"] = time(),
-						["seenBy"] = {
-							[GroupedWith.name.."-"..GroupedWith.realm] = {
-								["lastSeen"] = time(),
-								["firstSeen"] = time()
-							}
-						}
-					}
-				end
-			end
-		end
-	else
-		print( "nope" )
-	end
-]]
---[[
-
-	local x1 = GetHomePartyInfo()
-	if x1 then print("in home party")
-		print(x1[1], x1[2], x1[3], x1[4])
-		-- x1[1] == name-realm
-	else print("nope")
-	end
-
-
-	local memberCount = 0
-	for groupindex = 1,GetNumGroupMembers() do
-		if (GetPartyMember(groupindex)) then
-			memberCount = memberCount + 1
-		end
-	end
-	GroupedWith.Print( "your party has "..memberCount.." members." )
-]]
 
 -- end events
+function GroupedWith.HookSetUnit( arg1, arg2 )
+	print( "Hook: (")
+	for k,v in pairs( arg1 ) do
+		print( "arg[\""..k.."\"]=" )
+	end
+	--print( (arg1 or "nil")..",")
+	print( (arg2 or "nil").." )" )
+	local Name, unitID = GameTooltip:GetUnit()
+	print( "Name: "..(Name or "nil").." UnitID: "..( unitID or "nil") )
+	local Realm = ""
+	if UnitName("mouseover") == Name then
+		_, Realm = UnitName("mouseover");
+		if not Realm then
+			Realm = GetRealmName();
+		end
+	end
+	if( Name ) then
+		nameRealm = Name.."-"..Realm;
+		if( Realm == GroupedWith.realm ) then
+			nameRealm = Name
+		end
+
+		ttPlayer = GroupedWith_data[nameRealm]
+		if ttPlayer then
+			firstSeen = date( "%x %X", ttPlayer.firstSeen )
+			GameTooltip:AddLine( "First seen: "..firstSeen )
+
+			for you, data in pairs( ttPlayer.seenBy ) do
+				GameTooltip:AddLine( you.." at "..date( "%x %X", data.firstSeen ) )
+			end
+		end
+	end
+end
+
+
 function GroupedWith.command( msg )
 	GroupedWith.GROUP_ROSTER_UPDATE()
 end
