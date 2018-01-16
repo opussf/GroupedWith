@@ -58,17 +58,21 @@ function GroupedWith.GROUP_ROSTER_UPDATE()
 
 	if memberCount > 1 then -- not just alone.
 		for index = 1, memberCount-1 do
-			unitID = string.format( "%s%s", pre, index )
-			unitName = GetUnitName( unitID, true )
+			uID = string.format( "%s%s", pre, index )
+			uName = GetUnitName( uID, true )
+			print( "uName: "..uName )
 
-			_, _, unitName = string.find( unitName, "(.+)-" )
+			_, _, strippedName = string.find( uName, "(.+)-" )
+			uName = strippedName or uName
 
-			realmName = GetRealmName( unitID )
-			nameRealm = unitName.."-"..realmName
+			print( "uName: "..uName )
+
+			rName = GetRealmName( uID )
+			nameRealm = uName.."-"..rName
 
 			print( nameRealm )
 			print( index..": "..nameRealm )
-			if( unitName ~= "Unknown" ) then
+			if( uName ~= "Unknown" ) then
 				GroupedWith.UpdateData( nameRealm )
 			end
 		end
