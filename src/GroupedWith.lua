@@ -60,10 +60,16 @@ function GroupedWith.GROUP_ROSTER_UPDATE()
 		for index = 1, memberCount-1 do
 			unitID = string.format( "%s%s", pre, index )
 			unitName = GetUnitName( unitID, true )
-			print( unitID )
-			print( index..": "..GetUnitName( unitID , true ) )
+
+			_, _, unitName = string.find( unitName, "(.+)-" )
+
+			realmName = GetRealmName( unitID )
+			nameRealm = unitName.."-"..realmName
+
+			print( nameRealm )
+			print( index..": "..nameRealm )
 			if( unitName ~= "Unknown" ) then
-				GroupedWith.UpdateData( GetUnitName( unitID, true ) )
+				GroupedWith.UpdateData( nameRealm )
 			end
 		end
 	end
@@ -90,35 +96,19 @@ end
 
 -- end events
 function GroupedWith.HookSetUnit( arg1, arg2 )
-	print( "Hook: (")
-	for k,v in pairs( arg1 ) do
-		print( "arg[\""..k.."\"]=" )
-	end
-	--print( (arg1 or "nil")..",")
-	print( (arg2 or "nil").." )" )
-	local Name, unitID = GameTooltip:GetUnit()
-	print( "Name: "..(Name or "nil").." UnitID: "..( unitID or "nil") )
-	local Realm = ""
-	if UnitName("mouseover") == Name then
-		_, Realm = UnitName("mouseover");
-		if not Realm then
-			Realm = GetRealmName();
-		end
-	end
-	if( Name ) then
-		nameRealm = Name.."-"..Realm;
-		if( Realm == GroupedWith.realm ) then
-			nameRealm = Name
-		end
+	local name, unitID = GameTooltip:GetUnit()
+--	print( "Name: "..(name or "nil").." UnitID: "..( unitID or "nil") )
+	local realm = GetRealmName( unitID )
+--	print( "Realm: "..realm )
+	nameRealm = name.."-"..realm
 
-		ttPlayer = GroupedWith_data[nameRealm]
-		if ttPlayer then
-			firstSeen = date( "%x %X", ttPlayer.firstSeen )
-			GameTooltip:AddLine( "First seen: "..firstSeen )
+	ttPlayer = GroupedWith_data[nameRealm]
+	if ttPlayer then
+		firstSeen = date( "%x %X", ttPlayer.firstSeen )
+		GameTooltip:AddLine( "First seen: "..firstSeen )
 
-			for you, data in pairs( ttPlayer.seenBy ) do
-				GameTooltip:AddLine( you.." at "..date( "%x %X", data.firstSeen ) )
-			end
+		for you, data in pairs( ttPlayer.seenBy ) do
+			GameTooltip:AddLine( you.." at "..date( "%x %X", data.firstSeen ) )
 		end
 	end
 end
