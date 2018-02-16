@@ -17,7 +17,6 @@ GroupedWith_data = {}
 
 GroupedWith = {}
 
--- loaded
 function GroupedWith.OnLoad()
 	GroupedWithFrame:RegisterEvent( "ADDON_LOADED" )
 	GroupedWithFrame:RegisterEvent( "GROUP_ROSTER_UPDATE" )
@@ -36,10 +35,13 @@ end
 function GroupedWith.ADDON_LOADED()
 	GroupedWithFrame:UnregisterEvent( "ADDON_LOADED" )
 	GroupedWith.Print( "Addon Loaded" )
+	GroupedWith.name = UnitName("player")
 	GroupedWith.realm = GetRealmName()
-	GroupedWith.name = GetUnitName("player")
 	GroupedWith.fullName = GroupedWith.name.."-"..GroupedWith.realm
 end
+
+--[[
+
 
 function GroupedWith.GROUP_ROSTER_UPDATE()
 	GroupedWith.Print( "GROUP_ROSTER_UPDATE" )
@@ -59,24 +61,24 @@ function GroupedWith.GROUP_ROSTER_UPDATE()
 	if memberCount > 1 then -- not just alone.
 		for index = 1, memberCount-1 do
 			uID = string.format( "%s%s", pre, index )
-			uName = GetUnitName( uID, true )
-			print( "uName: "..uName )
+			nameRealm, uName = getNameRealm( uID )
 
-			_, _, strippedName = string.find( uName, "(.+)-" )
-			uName = strippedName or uName
-
-			print( "uName: "..uName )
-
-			rName = GetRealmName( uID )
-			nameRealm = uName.."-"..rName
-
-			print( nameRealm )
-			print( index..": "..nameRealm )
 			if( uName ~= "Unknown" ) then
 				GroupedWith.UpdateData( nameRealm )
 			end
 		end
 	end
+end
+function getNameRealm( unitID )
+	-- returns name-realm, name, realm
+	uName = GetUnitName( unitID, true )
+	_, _, strippedName, strippedRealm = string.find( uName, "(.+)-(.*)" )
+
+	uName = strippedName or uName
+	rName = strippedRealm or GetRealmName( unitID )
+	nameRealm = uName.."-"..rName
+
+	return nameRealm, uName, rName
 end
 
 function GroupedWith.UpdateData( unitName )
@@ -102,9 +104,9 @@ end
 function GroupedWith.HookSetUnit( arg1, arg2 )
 	local name, unitID = GameTooltip:GetUnit()
 --	print( "Name: "..(name or "nil").." UnitID: "..( unitID or "nil") )
-	local realm = GetRealmName( unitID )
---	print( "Realm: "..realm )
-	nameRealm = name.."-"..realm
+
+	nameRealm = getNameRealm( unitID )
+--	print( "nameRealm: "..nameRealm )
 
 	ttPlayer = GroupedWith_data[nameRealm]
 	if ttPlayer then
@@ -121,6 +123,7 @@ end
 function GroupedWith.command( msg )
 	GroupedWith.GROUP_ROSTER_UPDATE()
 end
+]]
 
 function GroupedWith.Print( msg, showName )
 	-- print to the chat frame
@@ -130,4 +133,3 @@ function GroupedWith.Print( msg, showName )
 	end
 	DEFAULT_CHAT_FRAME:AddMessage( msg )
 end
-

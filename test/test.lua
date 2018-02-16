@@ -11,9 +11,15 @@ test.outFileName = "testOut.xml"
 package.path = "../src/?.lua;'" .. package.path
 require "GroupedWith"
 
+GroupedWithFrame = CreateFrame()
+
 function test.before()
+	GroupedWith.ADDON_LOADED()
 end
 function test.after()
+end
+function test.test_AddonLoaded_FullName()
+	assertEquals( "testPlayer-testRealm", GroupedWith.fullName )
 end
 
 test.run()
