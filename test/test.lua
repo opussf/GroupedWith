@@ -19,7 +19,7 @@ end
 function test.after()
 end
 function test.test_AddonLoaded_FullName()
-	assertEquals( "testPlayer-testRealm", GroupedWith.fullName )
+	assertEquals( "testPlayer-Test Realm", GroupedWith.fullName )
 end
 
 test.run()
