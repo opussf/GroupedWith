@@ -40,6 +40,7 @@ function GroupedWith.ADDON_LOADED()
 	GroupedWith.name = UnitName("player")
 	GroupedWith.realm = GetRealmName()
 	GroupedWith.fullName = GroupedWith.name.."-"..GroupedWith.realm
+	TooltipDataProcessor.AddTooltipPostCall( Enum.TooltipDataType.Unit, GroupedWith.TooltipSetUnit )
 end
 function GroupedWith.VARIABLES_LOADED()
 	GroupedWithFrame:UnregisterEvent( "VARIABLES_LOADED" )
@@ -66,12 +67,16 @@ function GroupedWith.GROUP_ROSTER_UPDATE( ... )
 				GroupedWith_data[realm][name].seenBy[GroupedWith.fullName] = GroupedWith_data[realm][name].seenBy[GroupedWith.fullName] or
 						{["firstSeen"] = time()}
 
-				name, type, difficultyIndex, difficultyName, maxPlayers, dynamicDifficulty, isDynamic, instanceMapId, lfgID = GetInstanceInfo()
+				iname, itype, difficultyIndex, difficultyName, maxPlayers, dynamicDifficulty, isDynamic, instanceMapId, lfgID = GetInstanceInfo()
 				guildName, guildRankName, guildRankIndex = GetGuildInfo(pre..index)
 				if lfgID then
+					print( "lfgID: "..lfgID )
 					GroupedWith_data[realm][name].lfgIDs[lfgID] = GroupedWith_data[realm][name].lfgIDs[lfgID] or {}
 					GroupedWith_data[realm][name].lfgIDs[lfgID].runAt = time()
+					GroupedWith_data[realm][name].lfgIDs[lfgID].name  = iname
 					GroupedWith_data[realm][name].lfgIDs[lfgID].guildName = guildName
+					GroupedWith_data[realm][name].lfgIDs[lfgID].guildRankName = guildRankName
+					GroupedWith_data[realm][name].lfgIDs[lfgID].guildRankIndex = guildRankIndex
 				end
 
 			end
@@ -84,29 +89,29 @@ function GroupedWith.GetNameRealm( unitID )
 	if not realm then
 		realm = GetRealmName()
 	end
-
-	return name.."-"..realm, name, realm
+	if name then
+		return name.."-"..realm, name, realm
+	end
+end
+function GroupedWith.TooltipSetUnit( arg1, arg2 )
+	local name = GameTooltip:GetUnit()
+	local realm = nil
+	if UnitName( "mouseover" ) == name then
+		_, realm = UnitName( "mouseover" )
+		if not realm then
+			realm = GetRealmName()
+		end
+	end
+	if realm and GroupedWith_data[realm] then
+		ttPlayer = GroupedWith_data[realm][name]
+		if ttPlayer then
+			firstSeenTxt = date( "%x %X", ttPlayer.firstSeen )
+			GameTooltip:AddLine( "First seen: "..firstSeenTxt )
+		end
+	end
 end
 
 --[[
-function GroupedWith.UpdateData( unitName )
-	if GroupedWith_data[unitName] then
-		GroupedWith_data[unitName].lastSeen = time()
-	else
-		GroupedWith_data[unitName] = {
-			["lastSeen"] = time(),
-			["firstSeen"] = time(),
-			["seenBy"] = {
-				[GroupedWith.fullName] = {
-					["firstSeen"] = time()
-				}
-			}
-		}
-	end
-	if GroupedWith_data[unitName].seenBy[GroupedWith.fullName] then
-		GroupedWith_data[unitName].seenBy[GroupedWith.fullName].lastSeen = time()
-	end
-end
 
 -- end events
 function GroupedWith.HookSetUnit( arg1, arg2 )
@@ -127,10 +132,6 @@ function GroupedWith.HookSetUnit( arg1, arg2 )
 	end
 end
 
-
-function GroupedWith.command( msg )
-	GroupedWith.GROUP_ROSTER_UPDATE()
-end
 ]]
 
 function GroupedWith.Print( msg, showName )
