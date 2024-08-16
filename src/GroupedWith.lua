@@ -1,5 +1,8 @@
-GROUPEDWITH_MSG_VERSION = GetAddOnMetadata("GroupedWith","version")
-GROUPEDWITH_MSG_ADDONNAME = "GroupedWith"
+-- STEPS @VERSION@
+GW_SLUG, GroupedWith = ...
+GW_MSG_ADDONNAME     = C_AddOns.GetAddOnMetadata( GW_SLUG, "Title" )
+GW_MSG_AUTHOR        = C_AddOns.GetAddOnMetadata( GW_SLUG, "Author" )
+GW_MSG_VERSION       = C_AddOns.GetAddOnMetadata( GW_SLUG, "Version" )
 
 -- Colours
 COLOR_RED = "|cffff0000"
@@ -15,10 +18,9 @@ COLOR_END = "|r"
 
 GroupedWith_data = {}
 
-GroupedWith = {}
-
 function GroupedWith.OnLoad()
 	GroupedWithFrame:RegisterEvent( "ADDON_LOADED" )
+	GroupedWithFrame:RegisterEvent( "VARIABLES_LOADED" )
 	GroupedWithFrame:RegisterEvent( "GROUP_ROSTER_UPDATE" )
 
 	--register slash commands
@@ -28,7 +30,7 @@ function GroupedWith.OnLoad()
 
 	-- Chat system hook
 --	ChatFrame_AddMessageEventFilter("CHAT_MSG_SYSTEM", Hitlist.CHAT_MSG_SYSTEM)
-	GameTooltip:HookScript( "OnTooltipSetUnit", GroupedWith.HookSetUnit )
+--	GameTooltip:HookScript( "OnTooltipSetUnit", GroupedWith.HookSetUnit )
 end
 
 -- events
@@ -39,48 +41,48 @@ function GroupedWith.ADDON_LOADED()
 	GroupedWith.realm = GetRealmName()
 	GroupedWith.fullName = GroupedWith.name.."-"..GroupedWith.realm
 end
-
---[[
-
-
-function GroupedWith.GROUP_ROSTER_UPDATE()
+function GroupedWith.VARIABLES_LOADED()
+	GroupedWithFrame:UnregisterEvent( "VARIABLES_LOADED" )
+	GroupedWith.Print( "Variables Loaded" )
+end
+function GroupedWith.GROUP_ROSTER_UPDATE( ... )
 	GroupedWith.Print( "GROUP_ROSTER_UPDATE" )
 
 	local memberCount = GetNumGroupMembers()
 	GroupedWith.Print( ( memberCount or "nil" ) .. " members in the group." )
-
-	local inInstanceGroup = IsInGroup(LE_PARTY_CATEGORY_INSTANCE)
-	if inInstanceGroup then
-  		print("Player is in an instance group!")
+	if IsInGroup(LE_PARTY_CATEGORY_INSTANCE) then
+		GroupedWith.Print( "Player is in an instance group!" )
 	elseif IsInGroup() then
-  		print("Player is in a normal group!")
+		GroupedWith.Print( "Player is in a normal group." )
 	end
-
-	local pre="party"
-
-	if memberCount > 1 then -- not just alone.
+	pre = "party"
+	if memberCount > 1 then
 		for index = 1, memberCount-1 do
-			uID = string.format( "%s%s", pre, index )
-			nameRealm, uName = getNameRealm( uID )
+			key, name, realm = GroupedWith.GetNameRealm( pre..index )
+			if key then
+				GroupedWith_data[realm] = GroupedWith_data[realm] or {["firstSeen"] = time()}
+				GroupedWith_data[realm][name] = GroupedWith_data[realm][name] or {["firstSeen"] = time(),["lfgIDs"] = {}}
+				GroupedWith_data[realm][name].seenBy = GroupedWith_data[realm][name].seenBy or {}
+				GroupedWith_data[realm][name].seenBy[GroupedWith.fullName] = GroupedWith_data[realm][name].seenBy[GroupedWith.fullName] or
+						{["firstSeen"] = time()}
 
-			if( uName ~= "Unknown" ) then
-				GroupedWith.UpdateData( nameRealm )
+				name, type, difficultyIndex, difficultyName, maxPlayers, dynamicDifficulty, isDynamic, instanceMapId, lfgID = GetInstanceInfo()
+				GroupedWith_data[realm][name].lfgIDs[lfgID] = GroupedWith_data[realm][name].lfgIDs[lfgID] or {["runAt"]=time()}
 			end
 		end
 	end
 end
-function getNameRealm( unitID )
+function GroupedWith.GetNameRealm( unitID )
 	-- returns name-realm, name, realm
-	uName = GetUnitName( unitID, true )
-	_, _, strippedName, strippedRealm = string.find( uName, "(.+)-(.*)" )
+	name, realm = UnitName( unitID )
+	if not realm then
+		realm = GetRealmName()
+	end
 
-	uName = strippedName or uName
-	rName = strippedRealm or GetRealmName( unitID )
-	nameRealm = uName.."-"..rName
-
-	return nameRealm, uName, rName
+	return name.."-"..realm, name, realm
 end
 
+--[[
 function GroupedWith.UpdateData( unitName )
 	if GroupedWith_data[unitName] then
 		GroupedWith_data[unitName].lastSeen = time()
@@ -129,7 +131,7 @@ function GroupedWith.Print( msg, showName )
 	-- print to the chat frame
 	-- set showName to false to suppress the addon name printing
 	if (showName == nil) or (showName) then
-		msg = COLOR_GOLD..GROUPEDWITH_MSG_ADDONNAME..COLOR_END.."> "..msg
+		msg = COLOR_GOLD..GW_MSG_ADDONNAME..COLOR_END.."> "..msg
 	end
 	DEFAULT_CHAT_FRAME:AddMessage( msg )
 end

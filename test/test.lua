@@ -1,17 +1,12 @@
 #!/usr/bin/env lua
 
-addonData = { ["version"] = "1.0",
-}
-
 require "wowTest"
 
 test.outFileName = "testOut.xml"
 
--- require the file to test
-package.path = "../src/?.lua;'" .. package.path
-require "GroupedWith"
+ParseTOC( "../src/GroupedWith.toc" )
 
-GroupedWithFrame = CreateFrame()
+-- GroupedWithFrame = CreateFrame()
 
 function test.before()
 	GroupedWith.ADDON_LOADED()

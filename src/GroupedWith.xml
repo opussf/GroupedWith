@@ -5,10 +5,10 @@ C:\Projects\WoW\Bin\Interface\FrameXML\UI.xsd">
 	<Frame name="GroupedWithFrame" frameStrata="HIGH" toplevel="true" enableMouse="true" movable="true" parent="UIParent">
 		<Scripts>
 			<OnLoad>
-				GroupedWith.OnLoad();
+				GroupedWith.OnLoad()
 			</OnLoad>
 			<OnEvent>
-				GroupedWith[event](self, ...);
+				GroupedWith[event](self, ...)
 			</OnEvent>
 		</Scripts>
 	</Frame>
