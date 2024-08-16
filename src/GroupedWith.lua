@@ -67,7 +67,13 @@ function GroupedWith.GROUP_ROSTER_UPDATE( ... )
 						{["firstSeen"] = time()}
 
 				name, type, difficultyIndex, difficultyName, maxPlayers, dynamicDifficulty, isDynamic, instanceMapId, lfgID = GetInstanceInfo()
-				GroupedWith_data[realm][name].lfgIDs[lfgID] = GroupedWith_data[realm][name].lfgIDs[lfgID] or {["runAt"]=time()}
+				guildName, guildRankName, guildRankIndex = GetGuildInfo(pre..index)
+				if lfgID then
+					GroupedWith_data[realm][name].lfgIDs[lfgID] = GroupedWith_data[realm][name].lfgIDs[lfgID] or {}
+					GroupedWith_data[realm][name].lfgIDs[lfgID].runAt = time()
+					GroupedWith_data[realm][name].lfgIDs[lfgID].guildName = guildName
+				end
+
 			end
 		end
 	end
