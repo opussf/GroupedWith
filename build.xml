@@ -163,4 +163,13 @@
 		</exec>
 	</target>
 
+	<target name="run" depends="wow" description="run the export file">
+		<exec executable="lua" dir="${addon.dir}" resultproperty="runResult">
+			<arg value="${ant.project.name}_Export.lua" />
+			<arg value="${addon.dir}/../../../WTF/Account/OPUSSF" />
+			<arg value="report" />
+		</exec>
+		<echo>${runResult}</echo>
+	</target>
+
 </project>

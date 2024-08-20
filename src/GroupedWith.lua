@@ -57,12 +57,19 @@ function GroupedWith.GROUP_ROSTER_UPDATE( ... )
 		GroupedWith.Print( "Player is in a normal group." )
 	end
 	pre = "party"
+
+	if IsInRaid() then
+
+		pre = "raid"
+	end
+
 	if memberCount > 1 then
 		for index = 1, memberCount-1 do
 			key, name, realm = GroupedWith.GetNameRealm( pre..index )
-			if key then
+			if key and name ~= "Unknown" then
 				GroupedWith_data[realm] = GroupedWith_data[realm] or {["firstSeen"] = time()}
 				GroupedWith_data[realm][name] = GroupedWith_data[realm][name] or {["firstSeen"] = time(),["lfgIDs"] = {}}
+				GroupedWith_data[realm][name].lastSeen = time()
 				GroupedWith_data[realm][name].seenBy = GroupedWith_data[realm][name].seenBy or {}
 				GroupedWith_data[realm][name].seenBy[GroupedWith.fullName] = GroupedWith_data[realm][name].seenBy[GroupedWith.fullName] or
 						{["firstSeen"] = time()}
@@ -70,17 +77,24 @@ function GroupedWith.GROUP_ROSTER_UPDATE( ... )
 				iname, itype, difficultyIndex, difficultyName, maxPlayers, dynamicDifficulty, isDynamic, instanceMapId, lfgID = GetInstanceInfo()
 				guildName, guildRankName, guildRankIndex = GetGuildInfo(pre..index)
 				if lfgID then
-					print( "lfgID: "..lfgID )
-					GroupedWith_data[realm][name].lfgIDs[lfgID] = GroupedWith_data[realm][name].lfgIDs[lfgID] or {}
-					GroupedWith_data[realm][name].lfgIDs[lfgID].runAt = time()
-					GroupedWith_data[realm][name].lfgIDs[lfgID].name  = iname
-					GroupedWith_data[realm][name].lfgIDs[lfgID].guildName = guildName
-					GroupedWith_data[realm][name].lfgIDs[lfgID].guildRankName = guildRankName
-					GroupedWith_data[realm][name].lfgIDs[lfgID].guildRankIndex = guildRankIndex
+					print( "lfgID: "..lfgID..":"..instanceMapId )
+					GroupedWith_data[realm][name].lfgIDs[instanceMapId] = GroupedWith_data[realm][name].lfgIDs[instanceMapId] or {}
+					GroupedWith_data[realm][name].lfgIDs[instanceMapId].runAt = time()
+					GroupedWith_data[realm][name].lfgIDs[instanceMapId].name  = iname
+					GroupedWith_data[realm][name].lfgIDs[instanceMapId].guildName = guildName
+					GroupedWith_data[realm][name].lfgIDs[instanceMapId].guildRankName = guildRankName
+					GroupedWith_data[realm][name].lfgIDs[instanceMapId].guildRankIndex = guildRankIndex
 				end
 
 			end
 		end
+	end
+	for realm, names in pairs( GroupedWith_data ) do
+		local realmCount = 0
+		for name, _ in pairs( names ) do
+			realmCount = realmCount + ((name ~= "firstSeen" and name ~= "count") and 1 or 0)
+		end
+		GroupedWith_data[realm].count = realmCount
 	end
 end
 function GroupedWith.GetNameRealm( unitID )
@@ -103,37 +117,16 @@ function GroupedWith.TooltipSetUnit( arg1, arg2 )
 		end
 	end
 	if realm and GroupedWith_data[realm] then
+
 		ttPlayer = GroupedWith_data[realm][name]
 		if ttPlayer then
-			firstSeenTxt = date( "%x %X", ttPlayer.firstSeen )
-			GameTooltip:AddLine( "First seen: "..firstSeenTxt )
+			-- firstSeenTxt = date( "%x %X", ttPlayer.firstSeen )
+			firstSeenTxt = SecondsToTime( time() - ttPlayer.firstSeen )
+			GameTooltip:AddLine( "First seen: "..firstSeenTxt.." ago." )
+			GameTooltip:AddLine( "Seen in realm: "..GroupedWith_data[realm].count )
 		end
 	end
 end
-
---[[
-
--- end events
-function GroupedWith.HookSetUnit( arg1, arg2 )
-	local name, unitID = GameTooltip:GetUnit()
---	print( "Name: "..(name or "nil").." UnitID: "..( unitID or "nil") )
-
-	nameRealm = getNameRealm( unitID )
---	print( "nameRealm: "..nameRealm )
-
-	ttPlayer = GroupedWith_data[nameRealm]
-	if ttPlayer then
-		firstSeen = date( "%x %X", ttPlayer.firstSeen )
-		GameTooltip:AddLine( "First seen: "..firstSeen )
-
-		for you, data in pairs( ttPlayer.seenBy ) do
-			GameTooltip:AddLine( you.." at "..date( "%x %X", data.firstSeen ) )
-		end
-	end
-end
-
-]]
-
 function GroupedWith.Print( msg, showName )
 	-- print to the chat frame
 	-- set showName to false to suppress the addon name printing
